@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CPU Scheduling Simulator</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link href="./src/output.css" rel="stylesheet">
+</head>
+
+<body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="bg-linear-to-r from-blue-600 to-cyan-600 text-white py-6 shadow-md mb-8">
+    <div class="max-w-7xl mx-auto px-6">
+      <h1 class="text-3xl font-bold tracking-tight">ICS433 | CPU Scheduling Simulator</h1>
+      <p class="text-blue-100 mt-1 text-sm font-medium">Visualize and compare CPU scheduling algorithms</p>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-4 gap-8 pb-12 flex-1">
+    <!-- Sidebar / Controls -->
+    <div class="lg:col-span-1 space-y-6">
+      <!-- Configuration Card -->
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-semibold mb-4 text-slate-800 flex items-center">
+          <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+            </path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z">
+            </path>
+          </svg>
+
+          Configuration
+        </h2>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Algorithm</label>
+            <select id="algorithm-select"
+              class="w-full border-slate-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2.5 border bg-slate-50">
+              <option value="FCFS">First Come First Serve (FCFS)</option>
+              <option value="SJF">Shortest Job First (SJF) - Non-Preemptive</option>
+              <option value="RR">Round Robin (RR)</option>
+              <option value="Priority">Priority Scheduling</option>
+            </select>
+          </div>
+
+          <!-- Only visible for Round Robin (RR) -->
+          <div id="quantum-container" class="hidden">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Time Quantum (RR)</label>
+            <input type="number" id="quantum-input" value="2" min="1"
+              class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border focus:border-blue-500 focus:ring-blue-500 bg-slate-50">
+          </div>
+
+          <!-- Only visible for Priority Scheduling -->
+          <div id="priority-mode-container" class="hidden">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Priority Mode</label>
+            <select id="priority-mode"
+              class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border focus:border-blue-500 focus:ring-blue-500 bg-slate-50">
+              <option value="non-preemptive">Non-Preemptive</option>
+              <option value="preemptive">Preemptive</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Context Switch Overhead</label>
+            <input type="number" id="context-switch-input" value="0" min="0"
+              class="w-full border-slate-300 rounded-lg shadow-sm p-2.5 border focus:border-blue-500 focus:ring-blue-500 bg-slate-50">
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Process Card -->
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-semibold mb-4 text-slate-800 flex items-center">
+          <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+
+          Add Process
+        </h2>
+
+        <form id="add-process-form" class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">PID</label>
+              <input type="text" id="pid-input" required
+                class="w-full border-slate-300 rounded-lg shadow-sm p-2 border focus:border-blue-500 focus:ring-blue-500 bg-slate-50">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Arrival</label>
+              <input type="number" id="arrival-input" required min="0" value="0"
+                class="w-full border-slate-300 rounded-lg shadow-sm p-2 border focus:border-blue-500 focus:ring-blue-500 bg-slate-50">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Burst</label>
+              <input type="number" id="burst-input" required min="1" value="5"
+                class="w-full border-slate-300 rounded-lg shadow-sm p-2 border focus:border-blue-500 focus:ring-blue-500 bg-slate-50">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Priority</label>
+              <input type="number" id="priority-input" required min="0" value="1"
+                class="w-full border-slate-300 rounded-lg shadow-sm p-2 border focus:border-blue-500 focus:ring-blue-500 bg-slate-50">
+            </div>
+          </div>
+
+          <button type="submit"
+            class="w-full bg-slate-800 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-slate-900 transition shadow-sm">Add
+            Process</button>
+        </form>
+      </div>
+
+      <!-- Actions Card -->
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-semibold mb-4 text-slate-800 flex items-center">
+          <svg class="w-5 h-5 mr-2 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z">
+            </path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+
+          Actions
+        </h2>
+
+        <div class="space-y-3">
+          <button id="run-simulation-btn"
+            class="w-full bg-blue-600 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-blue-700 transition shadow-sm">Run
+            Simulation</button>
+
+          <button id="compare-btn"
+            class="w-full bg-cyan-600 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-cyan-700 transition shadow-sm">Compare
+            All Algorithms</button>
+
+          <button id="clear-processes-btn"
+            class="w-full bg-red-50 text-red-600 border border-red-100 font-medium py-2.5 px-4 rounded-lg hover:bg-red-100 transition">Clear
+            Processes</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="lg:col-span-3 space-y-8">
+      <!-- Processes List -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <h2 class="text-lg font-semibold mb-4 text-slate-800">Process Queue</h2>
+        <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-slate-50">
+              <tr>
+                <th class="px-5 py-3 text-center font-semibold text-slate-600 uppercase tracking-wider text-xs">PID</th>
+
+                <th class="px-5 py-3 text-center font-semibold text-slate-600 uppercase tracking-wider text-xs">Arrival
+                  Time</th>
+
+                <th class="px-5 py-3 text-center font-semibold text-slate-600 uppercase tracking-wider text-xs">Burst
+                  Time</th>
+
+                <th class="px-5 py-3 text-center font-semibold text-slate-600 uppercase tracking-wider text-xs">Priority
+                </th>
+
+                <th class="px-5 py-3 text-center font-semibold text-slate-600 uppercase tracking-wider text-xs">Action
+                </th>
+              </tr>
+            </thead>
+            <tbody id="process-table-body" class="divide-y divide-slate-200 bg-white">
+              <!-- Process rows will be injected here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Gantt Chart -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-semibold mb-4 text-slate-800">Gantt Chart</h2>
+        <div id="gantt-chart-container"
+          class="w-full bg-slate-100 border border-slate-300 rounded-lg h-28 flex items-center overflow-hidden relative shadow-inner">
+          <!-- Gantt blocks will be injected here -->
+          <div class="w-full h-full flex items-center justify-center text-slate-400 font-medium">Run simulation to view
+            Gantt chart</div>
+        </div>
+        <div id="gantt-timeline" class="flex justify-between text-xs font-semibold text-slate-500 mt-3 px-1">
+          <!-- Timeline markers -->
+        </div>
+      </div>
+
+      <!-- Metrics -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h2 class="text-lg font-semibold mb-4 text-slate-800">Per-Process Metrics</h2>
+          <div class="overflow-x-auto rounded-lg border border-slate-200">
+            <table class="min-w-full divide-y divide-slate-200 text-sm">
+              <thead class="bg-slate-50">
+                <tr>
+                  <th class="px-4 py-3 text-center font-semibold text-slate-600 uppercase tracking-wider text-xs">PID
+                  </th>
+
+                  <th class="px-4 py-3 text-center font-semibold text-slate-600 uppercase tracking-wider text-xs"
+                    title="Waiting Time">WT</th>
+
+                  <th class="px-4 py-3 text-center font-semibold text-slate-600 uppercase tracking-wider text-xs"
+                    title="Turnaround Time">TAT</th>
+
+                  <th class="px-4 py-3 text-center font-semibold text-slate-600 uppercase tracking-wider text-xs"
+                    title="Response Time">RT</th>
+
+                  <th class="px-4 py-3 text-center font-semibold text-slate-600 uppercase tracking-wider text-xs"
+                    title="Completion Time">CT</th>
+                </tr>
+              </thead>
+              <tbody id="metrics-table-body" class="divide-y divide-slate-200 bg-white">
+                <!-- Metrics rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h2 class="text-lg font-semibold mb-4 text-slate-800">System Metrics</h2>
+          <div class="space-y-4 text-sm" id="system-metrics-container">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3"><span
+                class="text-slate-500 font-medium">Avg Waiting Time:</span> <span id="avg-wt"
+                class="font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded">-</span></div>
+
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3"><span
+                class="text-slate-500 font-medium">Avg Turnaround Time:</span> <span id="avg-tat"
+                class="font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded">-</span></div>
+
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3"><span
+                class="text-slate-500 font-medium">Avg Response Time:</span> <span id="avg-rt"
+                class="font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded">-</span></div>
+
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3"><span
+                class="text-slate-500 font-medium">Throughput:</span> <span id="throughput"
+                class="font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded">-</span></div>
+
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3"><span
+                class="text-slate-500 font-medium">CPU Utilization:</span> <span id="utilization"
+                class="font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded">-</span></div>
+
+            <div class="flex justify-between items-center"><span class="text-slate-500 font-medium">Context
+                Switches:</span> <span id="context-switches"
+                class="font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded">-</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Event Log -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-semibold mb-4 text-slate-800">Event Log</h2>
+        <div id="event-log-container"
+          class="bg-slate-900 text-green-400 font-mono text-sm p-5 rounded-lg h-56 overflow-y-auto shadow-inner leading-relaxed">
+          <!-- Logs will be injected here -->
+          > Ready to simulate...
+        </div>
+      </div>
+
+      <!-- Comparison Table (hidden by default) -->
+      <div id="comparison-section" class="hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-semibold mb-4 text-slate-800">Algorithm Comparison</h2>
+        <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-slate-50">
+              <tr>
+                <th class="px-5 py-3 text-center font-semibold text-slate-600 uppercase tracking-wider text-xs">
+                  Algorithm</th>
+
+                <th class="px-5 py-3 text-center font-semibold text-slate-600 uppercase tracking-wider text-xs">Avg WT
+                </th>
+
+                <th class="px-5 py-3 text-center font-semibold text-slate-600 uppercase tracking-wider text-xs">Avg TAT
+                </th>
+
+                <th class="px-5 py-3 text-center font-semibold text-slate-600 uppercase tracking-wider text-xs">Avg RT
+                </th>
+
+                <th class="px-5 py-3 text-center font-semibold text-slate-600 uppercase tracking-wider text-xs">
+                  Throughput</th>
+
+                <th class="px-5 py-3 text-center font-semibold text-slate-600 uppercase tracking-wider text-xs">Context
+                  Switches</th>
+              </tr>
+            </thead>
+            <tbody id="comparison-table-body" class="divide-y divide-slate-200 bg-white">
+              <!-- Comparison rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Scripts (simulator, scheduling algorithms, UI, main) -->
+  <script src="./src/simulator.js"></script>
+  <script src="./src/algorithms.js"></script>
+  <script src="./src/ui.js"></script>
+  <script src="./src/main.js"></script>
+</body>
+
+</html>
