@@ -16,10 +16,13 @@
 
 <body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen flex flex-col">
   <!-- Header -->
-  <header class="bg-linear-to-r from-blue-600 to-cyan-600 text-white py-6 shadow-md mb-8">
-    <div class="max-w-7xl mx-auto px-6">
-      <h1 class="text-3xl font-bold tracking-tight">ICS433 | CPU Scheduling Simulator</h1>
-      <p class="text-blue-100 mt-1 text-sm font-medium">Visualize and compare CPU scheduling algorithms</p>
+  <header class="bg-linear-to-r from-cyan-600 to-blue-800 text-white py-6 shadow-md mb-8">
+    <div class="max-w-7xl mx-auto px-6 flex items-center gap-4">
+      <img src="./logo.png" alt="Logo" class="h-16 w-auto object-contain">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight">ICS433 | CPU Scheduling Simulator</h1>
+        <p class="text-blue-100 mt-1 text-sm font-medium">Visualize and compare CPU scheduling algorithms</p>
+      </div>
     </div>
   </header>
 
@@ -193,6 +196,22 @@
         </div>
         <div id="gantt-timeline" class="flex justify-between text-xs font-semibold text-slate-500 mt-3 px-1">
           <!-- Timeline markers -->
+        </div>
+      </div>
+
+      <!-- Playback Controls -->
+      <div id="playback-controls" class="hidden bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+        <button id="prev-step-btn" class="p-2 rounded hover:bg-slate-100 text-slate-600 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        </button>
+        <div class="flex-1 flex items-center gap-3">
+          <input type="range" id="time-slider" min="0" max="100" value="100" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+        </div>
+        <button id="next-step-btn" class="p-2 rounded hover:bg-slate-100 text-slate-600 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+        <div class="text-sm font-medium text-slate-600 min-w-[80px] text-right">
+          Time: <span id="current-time-display">0</span>
         </div>
       </div>
 

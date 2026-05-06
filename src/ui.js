@@ -39,7 +39,7 @@ class UIManager {
     });
   }
 
-  renderGanttChart(gantt, totalTime) {
+  renderFullGanttChart(gantt, totalTime) {
     const container = document.getElementById("gantt-chart-container");
     const timeline = document.getElementById("gantt-timeline");
 
@@ -67,13 +67,18 @@ class UIManager {
     });
     if (currentBlock) mergedGantt.push(currentBlock);
 
-    mergedGantt.forEach((block, index) => {
-      const duration = block.end - block.start;
-      const widthPercent = (duration / totalTime) * 100;
+    // Create a wrapper for the blocks
+    const blocksWrapper = document.createElement("div");
+    blocksWrapper.className = "w-full h-full flex relative";
 
+    mergedGantt.forEach((block, index) => {
       const blockDiv = document.createElement("div");
-      blockDiv.className = `h-full flex items-center justify-center text-xs font-bold text-white border-r border-white/20 ${this.getColor(block.pid)}`;
-      blockDiv.style.width = `${widthPercent}%`;
+      blockDiv.className = `gantt-block h-full flex items-center justify-center text-xs font-bold text-white border-white/20 transition-all duration-300 ease-out overflow-hidden whitespace-nowrap ${this.getColor(block.pid)}`;
+      
+      blockDiv.dataset.start = block.start;
+      blockDiv.dataset.end = block.end;
+      blockDiv.style.width = "0%";
+      blockDiv.style.borderRightWidth = "0px";
       blockDiv.title = `${block.pid} (${block.start} - ${block.end})`;
 
       if (block.pid !== "IDLE" && block.pid !== "CS") {
@@ -82,19 +87,21 @@ class UIManager {
         blockDiv.textContent = "CS";
       }
 
-      container.appendChild(blockDiv);
+      blocksWrapper.appendChild(blockDiv);
 
       // Timeline marker
       if (index === 0) {
         const startMarker = document.createElement("div");
-        startMarker.className = "absolute";
+        startMarker.className = "absolute transition-opacity duration-300 marker-time";
+        startMarker.dataset.time = block.start;
         startMarker.style.left = "0%";
         startMarker.textContent = block.start;
         timeline.appendChild(startMarker);
       }
 
       const endMarker = document.createElement("div");
-      endMarker.className = "absolute transform -translate-x-1/2";
+      endMarker.className = "absolute transform -translate-x-1/2 transition-opacity duration-300 marker-time";
+      endMarker.dataset.time = block.end;
 
       // Calculate cumulative width for marker position
       let cumulativeWidth = 0;
@@ -107,10 +114,41 @@ class UIManager {
       timeline.appendChild(endMarker);
     });
 
+    container.appendChild(blocksWrapper);
     timeline.classList.add("relative", "h-4");
   }
 
-  renderMetrics(processes, metrics) {
+  updateGanttProgress(currentTime, totalTime) {
+    document.querySelectorAll(".gantt-block").forEach(block => {
+      const start = parseFloat(block.dataset.start);
+      const end = parseFloat(block.dataset.end);
+      
+      if (currentTime <= start) {
+        block.style.width = "0%";
+        block.style.borderRightWidth = "0px";
+      } else if (currentTime >= end) {
+        const widthPercent = ((end - start) / totalTime) * 100;
+        block.style.width = `${widthPercent}%`;
+        block.style.borderRightWidth = "1px";
+      } else {
+        const widthPercent = ((currentTime - start) / totalTime) * 100;
+        block.style.width = `${widthPercent}%`;
+        block.style.borderRightWidth = "1px";
+      }
+    });
+
+    // Hide timeline markers that are in the future
+    document.querySelectorAll(".marker-time").forEach(marker => {
+      const time = parseFloat(marker.dataset.time);
+      if (time > currentTime) {
+        marker.style.opacity = "0";
+      } else {
+        marker.style.opacity = "1";
+      }
+    });
+  }
+
+  renderMetrics(processes, metrics, currentTime = Infinity) {
     const tbody = document.getElementById("metrics-table-body");
     tbody.innerHTML = "";
 
@@ -118,13 +156,21 @@ class UIManager {
     const sorted = [...processes].sort((a, b) => a.pid.localeCompare(b.pid));
 
     sorted.forEach(p => {
+      const isCompleted = p.completionTime !== -1 && p.completionTime <= currentTime;
+      const hasStarted = p.startTime !== -1 && p.startTime <= currentTime;
+      
+      const wt = isCompleted ? p.waitingTime : "-";
+      const tat = isCompleted ? p.turnaroundTime : "-";
+      const rt = hasStarted ? p.responseTime : "-";
+      const ct = isCompleted ? p.completionTime : "-";
+
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td class="px-3 py-2 whitespace-nowrap text-center font-medium text-gray-900">${p.pid}</td>
-        <td class="px-3 py-2 whitespace-nowrap text-center text-gray-500">${p.waitingTime}</td>
-        <td class="px-3 py-2 whitespace-nowrap text-center text-gray-500">${p.turnaroundTime}</td>
-        <td class="px-3 py-2 whitespace-nowrap text-center text-gray-500">${p.responseTime}</td>
-        <td class="px-3 py-2 whitespace-nowrap text-center text-gray-500">${p.completionTime}</td>
+        <td class="px-3 py-2 whitespace-nowrap text-center text-gray-500">${wt}</td>
+        <td class="px-3 py-2 whitespace-nowrap text-center text-gray-500">${tat}</td>
+        <td class="px-3 py-2 whitespace-nowrap text-center text-gray-500">${rt}</td>
+        <td class="px-3 py-2 whitespace-nowrap text-center text-gray-500">${ct}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -139,9 +185,10 @@ class UIManager {
     }
   }
 
-  renderLogs(logs) {
+  renderLogs(logs, currentTime = Infinity) {
     const container = document.getElementById("event-log-container");
-    container.innerHTML = logs.map(log => `<div>> ${log}</div>`).join("");
+    const visibleLogs = logs.filter(l => l.time <= currentTime);
+    container.innerHTML = visibleLogs.map(log => `<div>> ${log.message}</div>`).join("");
     container.scrollTop = container.scrollHeight;
   }
 

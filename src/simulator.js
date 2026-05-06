@@ -36,7 +36,7 @@ class SimulationEngine {
   }
 
   log(message) {
-    this.logs.push(`[Time ${this.time}] ${message}`);
+    this.logs.push({ time: this.time, message: `[Time ${this.time}] ${message}` });
   }
 
   addGanttBlock(pid, start, end, isContextSwitch = false) {
